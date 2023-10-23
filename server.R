@@ -1,40 +1,32 @@
 library(tidyverse)
-library(googlesheets4) # library to read data from google sheets
+library(stringr)
 library(readxl) # library to read data from excel
 options(scipen = 999) # remove scientific notation
 
-# works. If you want to directly important data from google sheets.
-    # run to authenticate google acc
-    # data can be moved to an excel or CSV once it is done being edited
-    
-    # gs4_auth()
-    
-    # sheets <- gs4_find("Battery/Motor/Prop spec")
-    # data <- read_sheet(sheets, sheet = "Sheet2")
-
-data <- read_excel("data/volt_rpm_test_data.xlsx")
+# datasets go here
+AT7215KV200_data <- read_excel("data/AT7215KV200.xlsx")
+AT5330LV220_data <- read_excel("data/AT5330KV220.xlsx")
 
 
 server <- function(input, output) {
+  input_motor <-reactive({input$select_motor})
   input_prop <- reactive({input$select_prop})
   user_input <- reactive({input$input_volt})
   
+  # add an if else statement here if more datasets are added
+  data <- reactive({
+    selected <- input_motor()
+    data <- read_excel(paste0("data/", selected))
+    data
+  })
+  
   filtered_data <- reactive({
-    kv_value <- input_prop()
+    prop <- input_prop()
     
-    if (kv_value == "19*10") {
-      filtered_data <- data %>%
-        filter(Propeller %in% c("19*10", "19*10b"))
-    } else if (kv_value == "20*10") {
-      filtered_data <- data %>%
-        filter(Propeller %in% c("20*10", "20*10b", "20*10c", "20*10d"))
-    } else if (kv_value == "21*10"){
-      filtered_data <- data %>%
-        filter(Propeller %in% c("21*10", "21*10b"))
-    } else {
-      filtered_data <- data %>%
-        filter(Propeller == kv_value)
-    }
+    prop_pattern <- gsub("\\*", "\\\\*", prop) # esc seq since * is special char
+    
+    filtered_data <- data() %>%
+      filter(str_detect(Propeller, prop_pattern))
     
     filtered_data
   })
@@ -50,7 +42,7 @@ server <- function(input, output) {
     max_volt <- max(filtered$`Voltage(V)`, na.rm = TRUE)
     
     if (is.finite(min_volt) && is.finite(max_volt)) {
-      return(paste("volts (", min_volt, ", ", max_volt, ")"))
+      return(paste0("volts (", min_volt, ", ", max_volt, "): "))
     } else {
       return("No valid voltage range")
     }
