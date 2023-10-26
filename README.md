@@ -9,7 +9,8 @@ Built by Derek Liu and Kaleb Shaw
 
 - Select motor data
 - Select propeller
-- Select input volts (from batter)
+- Select input volts (from battery)
 - Outputs effective volt range
 - Outputs RPM
-- Outputs Thrust (work in progress)
+- Outputs Thrust
+- Outputs Ground Roll
