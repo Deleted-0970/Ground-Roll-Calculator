@@ -1,6 +1,7 @@
 library(tidyverse)
 library(stringr)
 library(dplyr)
+library(plotly)
 library(readxl) # library to read data from excel
 options(scipen = 999) # remove scientific notation
 
@@ -85,9 +86,7 @@ server <- function(input, output) {
     result_prop
   })
   
-  # takes propeller and RPM and turns it to thrust
-  # currently all it does is take a propeller and return thrust at 1000 rpm
-  output$thrust <- renderText({
+  prop_data <- reactive({
     prop <- input_prop()
     # Read the entire .dat file with fill = TRUE, skipping rows 22 and 23
     prop_data <- read.table(paste0("data/PER3_", prop, "E.dat"), header = TRUE, 
@@ -113,7 +112,7 @@ server <- function(input, output) {
     
     # Reset row names
     rownames(prop_data) <- NULL
-
+    
     # add a column for RPM    
     prop_data <- prop_data %>% mutate(RPM = row_number() * 1000)
     # Create a row of zeros with the same number of columns as prop_data
@@ -121,8 +120,15 @@ server <- function(input, output) {
     
     # Add the zero row to the top of prop_data
     prop_data <- rbind(zero_row, prop_data)
+    prop_data
+  })
+  
+  # takes propeller and RPM and turns it to thrust
+  # currently all it does is take a propeller and return thrust at 1000 rpm
+  thrust <- reactive({
+
     
-    
+    prop_data <- prop_data()
     rpm <- rpm()
     rounded_num <- round(rpm / 1000, 0)
     higher_RPM <- (rounded_num + 1) * 1000
@@ -139,6 +145,39 @@ server <- function(input, output) {
     
     thrust <- thrust * coefficient
     thrust
+  })
+  
+  output$thrust <- renderText({
+    thrust()
+  })
+  
+  ground_roll <- reactive({
+    stall_Vel <- sqrt(2 * input$input_weight / (input$input_Rinf * input$input_plan * input$input_Clmax))
+    D <- 0.5 * input$input_Rinf * input$input_plan * input$input_CD * ((0.7 * stall_Vel) ^ 2) 
+    L <- 0.5 * input$input_Rinf * input$input_plan * input$input_Clmax * ((0.7 * stall_Vel) ^ 2)
+    numerator <- 1.44 * (input$input_weight ^ 2)
+    denominator <- 9.8 * input$input_Rinf * (thrust() - (D + (input$input_U * (input$input_weight - L))))
+    ground_roll <- numerator / denominator
     
+    # convert meters to feet
+    ground_roll <- ground_roll * 3.2808399
+    
+    ground_roll
+  })
+  
+  output$ground_roll <- renderText({
+    ground_roll()
+  })
+  
+  output$graph_plotly <- renderPlotly({
+    prop_data <- prop_data()
+    prop_data$Thrust.1 <- as.numeric(prop_data$Thrust.1)
+    p <- ggplot(prop_data, aes(x = RPM, y = Thrust.1)) +
+      geom_point() +  
+      labs(x = "RPM", y = "Thrust", title = "Graph !!")
+    
+    plotly_plot <- ggplotly(p)
+    
+    plotly_plot
   })
 }

@@ -2,6 +2,7 @@ library(tidyverse)
 library(dplyr)
 library(googlesheets4) # library to read data from google sheets
 library(readxl) # library to read data from excel
+library(plotly)
 options(scipen = 999) # remove scientific notation
 
 # works. If you want to directly important data from google sheets.
@@ -73,3 +74,13 @@ thrust <- 0
 # View the first few rows of the updated data
 View(all_data)
                     
+all_data$Thrust.1 <- as.numeric(all_data$Thrust.1)
+p <- ggplot(all_data, aes(x = RPM, y = Thrust.1)) +
+  geom_point() +  
+  labs(x = "RPM", y = "Thrust", title = "Graph !!")
+
+# Convert ggplot2 plot to plotly plot
+plotly_plot <- ggplotly(p)
+
+# Display the plot
+plotly_plot
