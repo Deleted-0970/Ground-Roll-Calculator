@@ -1,4 +1,5 @@
 library(tidyverse)
+library(dplyr)
 library(googlesheets4) # library to read data from google sheets
 library(readxl) # library to read data from excel
 options(scipen = 999) # remove scientific notation
@@ -32,7 +33,7 @@ if (kv_value == "19*10") {
 
 
 # Read the entire .dat file with fill = TRUE, skipping rows 22 and 23
-all_data <- read.table("data/PER3_20x10.dat", header = TRUE, fill = TRUE, skip = 21, nrows = 372)
+all_data <- read.table("data/PER3_19x10E.dat", header = TRUE, fill = TRUE, skip = 21, nrows = 372)
 
 # Define the expected number of columns in your data
 expected_columns <- 15
@@ -50,6 +51,24 @@ all_data <- all_data[-rows_to_remove, ]
 
 # Reset row names
 rownames(all_data) <- NULL
+
+all_data <- all_data %>% mutate(RPM = row_number() * 1000)
+
+all_data <- rbind(rep(0.00, ncol(all_data)), all_data)
+
+rpm <- 4494
+thrust <- 0
+  rounded_num <- round(rpm / 1000, 0)
+  higher_RPM <- (rounded_num + 1) * 1000
+  lower_RPM <- (rounded_num) * 1000
+  higher_thrust <- all_data %>% filter(RPM == higher_RPM) %>% pull(Thrust.1)
+  higher_thrust <- as.numeric(higher_thrust)
+  lower_thrust <- all_data %>% filter(RPM == lower_RPM) %>% pull(Thrust.1)
+  lower_thrust <- as.numeric(lower_thrust)
+  
+  RPM_diff <- higher_RPM - lower_RPM 
+  thrust <- ((rpm - lower_RPM) * (higher_thrust - lower_thrust) / RPM_diff) + lower_thrust
+  thrust
 
 # View the first few rows of the updated data
 View(all_data)
