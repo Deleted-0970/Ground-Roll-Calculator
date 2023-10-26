@@ -2,6 +2,7 @@ library(tidyverse)
 library(stringr)
 library(dplyr)
 library(plotly)
+library(ggplot2)
 library(readxl) # library to read data from excel
 options(scipen = 999) # remove scientific notation
 
@@ -10,14 +11,14 @@ server <- function(input, output) {
   input_prop <- reactive({input$select_prop})
   user_input <- reactive({input$input_volt})
   
-  # selecting the data file to load
+  # selecting the motor data file to load
   data <- reactive({
     selected <- input_motor()
     data <- read_excel(paste0("data/", selected))
     data
   })
   
-  # filtering data based on propeller selected
+  # filtering motor data based on propeller selected
   filtered_data <- reactive({
     prop <- input_prop()
     
@@ -27,7 +28,9 @@ server <- function(input, output) {
     filtered_data
   })
   
-  # finding voltage range
+  
+  
+  # finding voltage range to be displayed on UI
   voltage_range <- reactive({
     filtered <- filtered_data()
     
@@ -44,6 +47,7 @@ server <- function(input, output) {
       return("No valid voltage range")
     }
   })
+  
   # helper output to display voltage range
   output$range_label <- renderText({
     voltage_range()
@@ -60,7 +64,7 @@ server <- function(input, output) {
     result_voltage
   })
   
-  # output RPM based on input voltage
+  # output RPM based on calculated voltage
   rpm <- reactive({
     input <- user_input()
     
@@ -71,11 +75,15 @@ server <- function(input, output) {
     result_rpm
   })
   
+  # display RPM on UI
   output$rpm <- renderText({
     rpm()
   })
   
+  
+  
   # since the data sets are weird for propellers (e.g. multiple 19*10 data)
+  # displays prop note to UI
   output$prop_note <- renderText({
     input <- user_input()
     
@@ -86,6 +94,8 @@ server <- function(input, output) {
     result_prop
   })
   
+  
+  # load propeller data (this thing is liek actually messed up omg)
   prop_data <- reactive({
     prop <- input_prop()
     # Read the entire .dat file with fill = TRUE, skipping rows 22 and 23
@@ -105,7 +115,7 @@ server <- function(input, output) {
       )
     }
     
-    # Create a vector of rows to remove
+    # Create a vector of rows to remove (remove non 0 rows velocity)
     rows_to_remove <- c(1, unlist(sapply(seq(3, nrow(prop_data), 33), 
                                          function(start) start + 0:31)))
     prop_data <- prop_data[-rows_to_remove, ]
@@ -118,18 +128,18 @@ server <- function(input, output) {
     # Create a row of zeros with the same number of columns as prop_data
     zero_row <- rep(0.00, ncol(prop_data))
     
-    # Add the zero row to the top of prop_data
+    # Add a row of data for 0 RPM
     prop_data <- rbind(zero_row, prop_data)
     prop_data
   })
   
+  
+  
   # takes propeller and RPM and turns it to thrust
-  # currently all it does is take a propeller and return thrust at 1000 rpm
   thrust <- reactive({
-
-    
     prop_data <- prop_data()
     rpm <- rpm()
+    # interpolation
     rounded_num <- round(rpm / 1000, 0)
     higher_RPM <- (rounded_num + 1) * 1000
     lower_RPM <- (rounded_num) * 1000
@@ -141,17 +151,21 @@ server <- function(input, output) {
     RPM_diff <- higher_RPM - lower_RPM 
     thrust <- ((rpm - lower_RPM) * (higher_thrust - lower_thrust) / RPM_diff) + lower_thrust
     
+    # random ahh coefficient to make it work :D
     coefficient <- 2
     
     thrust <- thrust * coefficient
     thrust
   })
   
+  # display thrust value in UI
   output$thrust <- renderText({
     thrust()
   })
   
+  # Calculate ground roll
   ground_roll <- reactive({
+    # ground roll equation :c
     stall_Vel <- sqrt(2 * input$input_weight / (input$input_Rinf * input$input_plan * input$input_Clmax))
     D <- 0.5 * input$input_Rinf * input$input_plan * input$input_CD * ((0.7 * stall_Vel) ^ 2) 
     L <- 0.5 * input$input_Rinf * input$input_plan * input$input_Clmax * ((0.7 * stall_Vel) ^ 2)
@@ -165,11 +179,15 @@ server <- function(input, output) {
     ground_roll
   })
   
+  # display ground roll in UI
   output$ground_roll <- renderText({
     ground_roll()
   })
   
-  output$graph_plotly <- renderPlotly({
+  
+  
+  # create a random placeholder plot
+  reactive_plot <- reactive({
     prop_data <- prop_data()
     prop_data$Thrust.1 <- as.numeric(prop_data$Thrust.1)
     p <- ggplot(prop_data, aes(x = RPM, y = Thrust.1)) +
@@ -179,5 +197,10 @@ server <- function(input, output) {
     plotly_plot <- ggplotly(p)
     
     plotly_plot
+  })
+  
+  # display plot to UI
+  output$graph_plotly <- renderPlotly({
+    reactive_plot()
   })
 }

@@ -1,3 +1,5 @@
+library(plotly)
+
 ui <- fluidPage(
   titlePanel(strong("Ground Roll Calculator")),
   sidebarLayout(
@@ -9,8 +11,9 @@ ui <- fluidPage(
       # put more data files here:
       selectInput("select_motor", label = "select motor", 
                   choices = list(
+                    "AT5330 kv220" = "AT5330KV220.xlsx",
                     "AT7215 kv200" = "AT7215KV200.xlsx",
-                    "AT5330 kv220" = "AT5330KV220.xlsx"
+                    "AT7215 kv220" = "AT7215KV220.xlsx"
                   ),
                   selected = "AT5330KV220.xlsx"),
       
@@ -32,7 +35,7 @@ ui <- fluidPage(
         h4("Coeffficients", style = "color: #333; font-size: 18px; font-weight: bold; margin-bottom: 15px;")
       ),
       
-      numericInput("input_weight", label = "Weight lb (W)", value = 49, step = 0.1),
+      numericInput("input_weight", label = "Weight (N)", value = 49, step = 0.1),
       numericInput("input_thrust", label = "thrust (T). Not Connected To Backend", value = 0.0, step = 0.1),
       numericInput("input_Rinf", label = "wow (R_inf)", value = 1.225, step = 0.001),
       numericInput("input_Clmax", label = "hi (C_lmax)", value = 1.2, step = 0.01),

@@ -14,7 +14,7 @@ options(scipen = 999) # remove scientific notation
 # sheets <- gs4_find("Battery/Motor/Prop spec")
 # data <- read_sheet(sheets, sheet = "Sheet2")
 
-data <- read_excel("data/volt_rpm_test_data.xlsx")
+data <- read_excel("data/AT7215KV220.xlsx")
 
 input <- 45
 kv_value <- "20*10"
@@ -34,7 +34,7 @@ if (kv_value == "19*10") {
 
 
 # Read the entire .dat file with fill = TRUE, skipping rows 22 and 23
-all_data <- read.table("data/PER3_19x10E.dat", header = TRUE, fill = TRUE, skip = 21, nrows = 372)
+all_data <- read.table("data/PER3_21x10E.dat", header = TRUE, fill = TRUE, skip = 21, nrows = 372)
 
 # Define the expected number of columns in your data
 expected_columns <- 15
@@ -84,3 +84,6 @@ plotly_plot <- ggplotly(p)
 
 # Display the plot
 plotly_plot
+
+
+
