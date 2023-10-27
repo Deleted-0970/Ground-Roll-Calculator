@@ -25,8 +25,26 @@ server <- function(input, output) {
     filtered_data <- data() %>%
       filter(str_detect(Propeller, prop))
     
+    if (nrow(filtered_data) == 0) {
+      # Define fallbacks for specific propellers
+      fallback_prop <- switch(
+        prop,
+        "17x12" = "18x10",
+        "18x12" = "19x10",
+        "19x12" = "20x10",
+        # Add more cases as needed
+      )
+      
+      # If a specific fallback is defined, filter for it; otherwise, use a general fallback
+      if (!is.null(fallback_prop)) {
+        filtered_data <- data() %>%
+          filter(str_detect(Propeller, fallback_prop))
+      } 
+    }
+    
     filtered_data
   })
+  
   
   
   

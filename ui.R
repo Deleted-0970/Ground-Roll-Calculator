@@ -20,8 +20,11 @@ ui <- fluidPage(
       # if more propeller sizes, put them here:
       selectInput("select_prop", label = "select propeller", 
                   choices = list(
+                    "17x12" = "17x12",
                     "18x10" = "18x10",
+                    "18x12" = "18x12",
                     "19x10" = "19x10",
+                    "19x12" = "19x12",
                     "20x10" = "20x10",
                     "21x10" = "21x10"
                   ), 
